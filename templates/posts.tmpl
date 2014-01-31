@@ -1,0 +1,14 @@
+
+	{{range .posts}}
+	<h3><a href="/{{ .Id }}">{{ .Title }}</a></h3>
+	<small>{{.Created | formatTime}}</small>
+	<div>{{ .Body }}</div>
+	{{end}}
+
+
+    <h2>Create a Post</h2>
+    <form action="/" method="POST">
+      <input type="text" name="Title" placeholder="Title" /><br>
+      <textarea name="Body"></textarea><br>
+      <input type="submit" value="submit"/>
+    </form>
