@@ -1,6 +1,7 @@
 package main
 
 import (
+        "net/http"
 	"database/sql"
 	"github.com/coopernurse/gorp"
 	"github.com/codegangsta/martini"
@@ -11,6 +12,20 @@ import (
         "log"
         "time"
 )
+
+type Post struct {
+    Id      int64 `db:"post_id"`
+    Created int64
+    Title   string `form:"Title"`
+    Body    string `form:"Body" binding:"required"`
+}
+ 
+func (bp Post) Validate(errors *binding.Errors, req *http.Request) {
+    //custom validation
+    if len(bp.Title) == 0 {
+        errors.Fields["title"] = "Title cannot be empty"
+    }
+}
 
 
 func main() {
@@ -35,9 +50,6 @@ func main() {
 
 
 
-
-
-
     // lets start martini and the real code
     m := martini.Classic()
 
@@ -47,10 +59,8 @@ func main() {
         Funcs: []template.FuncMap{
         	{
 			"formatTime": func(args ...interface{}) string { 
-				var s string
     				t1 := time.Unix(args[0].(int64), 0)
-				s = t1.Format(time.Stamp)
-    				return s
+				return t1.Format(time.Stamp)
                         },
 			"unescaped": func(args ...interface{}) template.HTML {
                                 return template.HTML(args[0].(string))
@@ -64,10 +74,6 @@ func main() {
         var posts []Post
         _, err = dbmap.Select(&posts, "select * from posts order by post_id")
         checkErr(err, "Select failed")
-
-        for x, p := range posts {
-            log.Printf("    %d: %v\n", x, p)
-        }
 
         newmap := map[string]interface{}{"metatitle": "this is my custom title", "posts": posts}
 
@@ -108,14 +114,6 @@ func main() {
 }
 
 
-type Post struct {
-    // db tag lets you specify the column name if it differs from the struct field
-    Id      int64 `db:"post_id"`
-    Created int64
-    Title   string `form:"Title" binding:"required"`
-    Body    string `form:"Body"`
-}
-
 func newPost(title, body string) Post {
     return Post{
         //Created: time.Now().UnixNano(),
@@ -130,7 +128,7 @@ func initDb() *gorp.DbMap {
     // use whatever database/sql driver you wish
     
     //db, err := sql.Open("sqlite3", "/tmp/post_db.bin")
-    db, err := sql.Open("mysql", "root:1meahstarr@unix(/var/run/mysqld/mysqld.sock)/sample")
+    db, err := sql.Open("mysql", "USERNAME:PASSWORD@unix(/var/run/mysqld/mysqld.sock)/sample")
     checkErr(err, "sql.Open failed")
 
     // construct a gorp DbMap
